@@ -1,3 +1,16 @@
+import streamlit as st
+import requests
+from bs4 import BeautifulSoup
+import io
+import pandas as pd
+from PyPDF2 import PdfReader
+from PIL import Image
+import os
+from groq import Groq
+
+# Streamlit page configuration
+st.set_page_config(layout="wide")
+
 # Function to fetch available models from Groq
 def fetch_groq_models():
     try:
