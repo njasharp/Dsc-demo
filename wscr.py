@@ -124,6 +124,13 @@ if "model_1" not in st.session_state:
     st.session_state["model_1"] = default_model
 if "model_2" not in st.session_state:
     st.session_state["model_2"] = default_model
+if "model_improvement" not in st.session_state:
+    st.session_state["model_improvement"] = default_model
+if "model_evaluation" not in st.session_state:
+    st.session_state["model_evaluation"] = default_model
+if "model_final" not in st.session_state:
+    st.session_state["model_final"] = default_model
+
 if "system_prompt" not in st.session_state:
     st.session_state["system_prompt"] = ""
 if "new_message" not in st.session_state:
@@ -148,24 +155,27 @@ st.sidebar.write("SmartSuggest Settings")
 
 # Sidebar menu
 with st.sidebar:
-    # Select model
-    model_option_1 = st.selectbox(
-        "Select a 1st LLM model",
+    # Select models for each step
+    st.session_state["model_improvement"] = st.selectbox(
+        "Select LLM model for Improvement",
         list(SUPPORTED_MODELS.keys()),
-        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_1"]),
-        key="model_1_select"
+        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_improvement"]),
+        key="model_improvement_select"
     )
-    st.session_state["model_1"] = model_option_1
-    st.write('You selected 1st:', model_option_1)
-
-    model_option_2 = st.selectbox(
-        "Select a 2nd LLM model",
+    
+    st.session_state["model_evaluation"] = st.selectbox(
+        "Select LLM model for Evaluation",
         list(SUPPORTED_MODELS.keys()),
-        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_2"]),
-        key="model_2_select"
+        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_evaluation"]),
+        key="model_evaluation_select"
     )
-    st.session_state["model_2"] = model_option_2
-    st.write('You selected 2nd:', model_option_2)
+    
+    st.session_state["model_final"] = st.selectbox(
+        "Select LLM model for Final Analysis",
+        list(SUPPORTED_MODELS.keys()),
+        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_final"]),
+        key="model_final_select"
+    )
 
     prompt_option = st.radio("Select Prompt Option:", ("SmartSuggest Prompt", "Meta Prompt", "Advanced Prompt", "Custom Prompt"))
 
@@ -239,7 +249,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
         if st.session_state["show_steps"]:
             st.subheader("Improved Prompt")
         improvement_prompt = f"Improve the following prompt for better analysis and insights:\n\n{prompt}"
-        improved_prompt = query_groq(st.session_state["system_prompt"], None, improvement_prompt, SUPPORTED_MODELS[st.session_state["model_1"]])
+        improved_prompt = query_groq(st.session_state["system_prompt"], None, improvement_prompt, SUPPORTED_MODELS[st.session_state["model_improvement"]])
 
         if st.session_state["show_steps"]:
             st.markdown(improved_prompt)
@@ -276,7 +286,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             try:
                 with sidebar_placeholder:
                     with st.spinner("Processing..."):
-                        response = query_groq(st.session_state["system_prompt"], None, augmented_prompt, SUPPORTED_MODELS[st.session_state["model_1"]])
+                        response = query_groq(st.session_state["system_prompt"], None, augmented_prompt, SUPPORTED_MODELS[st.session_state["model_improvement"]])
                 st.markdown(response)
                 st.session_state["messages"].append({"role": "assistant", "content": response})
             except Exception as e:
@@ -292,7 +302,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             evaluation_prompt = f"Evaluate the following response and check if it is good enough:\n\n{response}"
             with sidebar_placeholder:
                 with st.spinner("Processing..."):
-                    evaluation_response = query_groq(st.session_state["system_prompt"], None, evaluation_prompt, SUPPORTED_MODELS[st.session_state["model_2"]])
+                    evaluation_response = query_groq(st.session_state["system_prompt"], None, evaluation_prompt, SUPPORTED_MODELS[st.session_state["model_evaluation"]])
             st.markdown(evaluation_response)
             st.session_state["messages"].append({"content": evaluation_response})
 
@@ -302,7 +312,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             feedback_prompt = f"Grade the quality of this response and provide feedback:\n\n{response}\n\nEvaluation: {evaluation_response}"
             with sidebar_placeholder:
                 with st.spinner("Processing..."):
-                    feedback_response = query_groq(st.session_state["system_prompt"], None, feedback_prompt, SUPPORTED_MODELS[st.session_state["model_1"]])
+                    feedback_response = query_groq(st.session_state["system_prompt"], None, feedback_prompt, SUPPORTED_MODELS[st.session_state["model_final"]])
             st.markdown(feedback_response)
             st.session_state["messages"].append({"content": feedback_response})
 
@@ -316,7 +326,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
         try:
             with sidebar_placeholder:
                 with st.spinner("Processing..."):
-                    final_response = query_groq(st.session_state["system_prompt"], None, final_prompt_analysis, SUPPORTED_MODELS[st.session_state["model_2"]])
+                    final_response = query_groq(st.session_state["system_prompt"], None, final_prompt_analysis, SUPPORTED_MODELS[st.session_state["model_final"]])
             st.markdown(final_response)
             st.session_state["messages"].append({"content": final_response})
         except Exception as e:
