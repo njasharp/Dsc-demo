@@ -1,17 +1,3 @@
-import streamlit as st
-import requests
-from bs4 import BeautifulSoup
-import io
-import pandas as pd
-from PyPDF2 import PdfReader
-from PIL import Image
-import os
-from groq import Groq
-
-# Streamlit page configuration
-st.set_page_config(layout="wide")
-
-
 # Function to fetch available models from Groq
 def fetch_groq_models():
     try:
@@ -46,6 +32,7 @@ def scrape_website(url):
         st.error(f"Failed to scrape the website: {e}")
         return ""
 
+# Function to generate responses from the Groq model
 def model_res_generator(messages):
     try:
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -174,86 +161,92 @@ st.subheader("Enter your query and view results")
 st.session_state["user_query"] = st.text_input("What is your query?", key="query_input")
 if st.session_state["user_query"]:
     original_prompt = st.session_state["user_query"]
+    improved_prompt = None  # Initialize improved_prompt
+
     if prompt_option == "SmartSuggest Prompt":
         st.markdown("Improving the prompt...")
         improvement_prompt = f"Improve the following prompt for better analysis and insights:\n\n{original_prompt}"
         improvement_messages = [{"role": "user", "content": improvement_prompt}]
         improved_prompt = model_res_generator(improvement_messages)
-        st.session_state["messages"].append({"role": "assistant", "content": f"**Improved Prompt:** {improved_prompt}"})
-        st.markdown(improved_prompt)
 
-if st.session_state["user_query"]:
-    st.write("Analyzing the content...")
+        if not improved_prompt:  # Check if the improved prompt was successfully generated
+            st.error("Failed to generate an improved prompt. Please check the input and try again.")
+        else:
+            st.session_state["messages"].append({"role": "assistant", "content": f"**Improved Prompt:** {improved_prompt}"})
+            st.markdown(improved_prompt)
 
-    # Combine original and improved prompts if the option is selected
-    if st.session_state["use_both_prompts"]:
-        final_prompt = f"{original_prompt}\n\n{improved_prompt}"
-    else:
-        final_prompt = improved_prompt
+    if st.session_state["user_query"] and improved_prompt:
+        st.write("Analyzing the content...")
 
-    # Include scraped content, uploaded image, and uploaded file content in the query
-    augmented_prompt = final_prompt + "\n\n" + st.session_state["scraped_content"] + "\n\n" + st.session_state["uploaded_file_content"]
-    if st.session_state["uploaded_image"]:
-        image = Image.open(st.session_state["uploaded_image"])
-        augmented_prompt += f"\n\n[Attached Image: {st.session_state['uploaded_image'].name}]"
+        # Combine original and improved prompts if the option is selected
+        if st.session_state["use_both_prompts"]:
+            final_prompt = f"{original_prompt}\n\n{improved_prompt}"
+        else:
+            final_prompt = improved_prompt
 
-    # Prepare messages
-    messages = [{"role": "user", "content": augmented_prompt}]
-    if st.session_state["system_prompt"]:
-        messages.insert(0, {"role": "system", "content": st.session_state["system_prompt"]})
+        # Include scraped content, uploaded image, and uploaded file content in the query
+        augmented_prompt = final_prompt + "\n\n" + st.session_state["scraped_content"] + "\n\n" + st.session_state["uploaded_file_content"]
+        if st.session_state["uploaded_image"]:
+            image = Image.open(st.session_state["uploaded_image"])
+            augmented_prompt += f"\n\n[Attached Image: {st.session_state['uploaded_image'].name}]"
 
-    # Step 1: Generate initial response
-    st.write("Generating the initial response...")
-    try:
-        response = model_res_generator(messages)
-        st.markdown(response)
-        st.session_state["messages"].append({"role": "assistant", "content": response})
-    except Exception as e:
-        st.error(f"Failed to generate response: {e}")
-        response = ""
+        # Prepare messages
+        messages = [{"role": "user", "content": augmented_prompt}]
+        if st.session_state["system_prompt"]:
+            messages.insert(0, {"role": "system", "content": st.session_state["system_prompt"]})
 
-    # Step 2: Evaluate the response
-    if st.session_state["show_steps"]:
-        st.subheader("Evaluating the Response")
-        evaluation_prompt = f"Evaluate the following response and check if it is good enough:\n\n{response}"
-        evaluation_messages = [{"role": "user", "content": evaluation_prompt}]
+        # Step 1: Generate initial response
+        st.write("Generating the initial response...")
         try:
-            evaluation_response = model_res_generator(evaluation_messages)
-            st.markdown(evaluation_response)
-            st.session_state["messages"].append({"content": evaluation_response})
+            response = model_res_generator(messages)
+            st.markdown(response)
+            st.session_state["messages"].append({"role": "assistant", "content": response})
         except Exception as e:
-            st.error(f"Failed to evaluate response: {e}")
+            st.error(f"Failed to generate response: {e}")
+            response = ""
 
-    # Step 3: Grade and provide feedback
-    if st.session_state["show_steps"]:
-        st.subheader("Grading the Response and Providing Feedback")
-        feedback_prompt = f"Grade the quality of this response and provide feedback:\n\n{response}\n\nEvaluation: {evaluation_response}"
-        feedback_messages = [{"role": "user", "content": feedback_prompt}]
+        # Step 2: Evaluate the response
+        if st.session_state["show_steps"]:
+            st.subheader("Evaluating the Response")
+            evaluation_prompt = f"Evaluate the following response and check if it is good enough:\n\n{response}"
+            evaluation_messages = [{"role": "user", "content": evaluation_prompt}]
+            try:
+                evaluation_response = model_res_generator(evaluation_messages)
+                st.markdown(evaluation_response)
+                st.session_state["messages"].append({"content": evaluation_response})
+            except Exception as e:
+                st.error(f"Failed to evaluate response: {e}")
+
+        # Step 3: Grade and provide feedback
+        if st.session_state["show_steps"]:
+            st.subheader("Grading the Response and Providing Feedback")
+            feedback_prompt = f"Grade the quality of this response and provide feedback:\n\n{response}\n\nEvaluation: {evaluation_response}"
+            feedback_messages = [{"role": "user", "content": feedback_prompt}]
+            try:
+                feedback_response = model_res_generator(feedback_messages)
+                st.markdown(feedback_response)
+                st.session_state["messages"].append({"content": feedback_response})
+            except Exception as e:
+                st.error(f"Failed to generate feedback: {e}")
+
+        # Final Step: Apply final prompt to the LLM including any additional content
+        st.subheader("Final Query and Analysis")
+        final_prompt_analysis = f"Final analysis and query based on the improved and evaluated response:\n\n{final_prompt}\n\n"
+        final_prompt_analysis += st.session_state["scraped_content"] + "\n\n" + st.session_state["uploaded_file_content"]
+        if st.session_state["uploaded_image"]:
+            final_prompt_analysis += f"\n\n[Attached Image: {st.session_state['uploaded_image'].name}]"
+
+        final_messages = [{"role": "user", "content": final_prompt_analysis}]
         try:
-            feedback_response = model_res_generator(feedback_messages)
-            st.markdown(feedback_response)
-            st.session_state["messages"].append({"content": feedback_response})
+            final_response = model_res_generator(final_messages)
+            st.markdown(final_response)
+            st.session_state["messages"].append({"content": final_response})
         except Exception as e:
-            st.error(f"Failed to generate feedback: {e}")
+            st.error(f"Failed to generate final response: {e}")
 
-    # Final Step: Apply final prompt to the LLM including any additional content
-    st.subheader("Final Query and Analysis")
-    final_prompt_analysis = f"Final analysis and query based on the improved and evaluated response:\n\n{final_prompt}\n\n"
-    final_prompt_analysis += st.session_state["scraped_content"] + "\n\n" + st.session_state["uploaded_file_content"]
-    if st.session_state["uploaded_image"]:
-        final_prompt_analysis += f"\n\n[Attached Image: {st.session_state['uploaded_image'].name}]"
-
-    final_messages = [{"role": "user", "content": final_prompt_analysis}]
-    try:
-        final_response = model_res_generator(final_messages)
-        st.markdown(final_response)
-        st.session_state["messages"].append({"content": final_response})
-    except Exception as e:
-        st.error(f"Failed to generate final response: {e}")
-
-    if st.session_state["show_steps"]:
-        st.write("**Final Query and Analysis:**")
-        st.markdown(final_response)
+        if st.session_state["show_steps"]:
+            st.write("**Final Query and Analysis:**")
+            st.markdown(final_response)
 
 # Sidebar info or footer
 st.sidebar.info("Built by DW 8-30-24")
