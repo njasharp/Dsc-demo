@@ -11,7 +11,7 @@ from groq import Groq
 # Streamlit page configuration
 st.set_page_config(layout="wide")
 
-# Apply custom CSS for a dark theme
+# Apply custom CSS for a dark theme, including the sidebar
 st.markdown(
     """
     <style>
@@ -19,7 +19,17 @@ st.markdown(
         background-color: #0e0e0e;
         color: #ffffff;
     }
-    .stTextInput, .stTextArea, .stSelectbox {
+    .css-18e3th9 {
+        background-color: #0e0e0e;  /* Sidebar background color */
+    }
+    .css-1d391kg {
+        background-color: #0e0e0e;  /* Sidebar selectbox background color */
+    }
+    .css-1v0mbdj {
+        background-color: #262626;  /* Dropdown background color */
+        color: #ffffff;
+    }
+    .stTextInput, .stTextArea, .stSelectbox, .stCheckbox {
         background-color: #262626;
         color: #ffffff;
     }
@@ -27,10 +37,19 @@ st.markdown(
         background-color: #1e1e1e;
         color: #ffffff;
     }
+    .stTextInput > div > input {
+        background-color: #262626;
+        color: #ffffff;
+    }
+    .stTextArea > div > textarea {
+        background-color: #262626;
+        color: #ffffff;
+    }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 # Function to fetch available models from Groq
 def fetch_groq_models():
