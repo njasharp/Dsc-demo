@@ -11,42 +11,6 @@ from groq import Groq
 # Streamlit page configuration
 st.set_page_config(layout="wide")
 
-# Apply custom CSS for a dark theme, including the sidebar
-st.markdown(
-    """
-    <style>
-    /* Overall background and text color */
-    .stApp {
-        background-color: #0e0e0e;
-        color: #ffffff;
-    }
-    
-    /* Sidebar background color */
-    .css-18e3th9 {
-        background-color: #0e0e0e;  
-        color: #ffffff;
-    }
-
-    /* Sidebar selectbox, checkbox, text input, and text area background and text color */
-    .css-1d391kg, .css-1v0mbdj, .stTextInput > div > input, .stTextArea > div > textarea, .stSelectbox, .stCheckbox > div {
-        background-color: #0e0e0e;
-        color: #ffffff;
-    }
-    
-    /* Button styles */
-    .stButton > button {
-        background-color: #1e1e1e;
-        color: #ffffff;
-    }
-
-    /* Adjust text visibility for all input elements in sidebar */
-    .stTextInput > div > input, .stTextArea > div > textarea, .css-1v0mbdj {
-        color: #ffffff;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 # Function to fetch available models from Groq
 def fetch_groq_models():
