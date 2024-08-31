@@ -29,7 +29,7 @@ st.markdown(
 
     /* Sidebar selectbox, checkbox, text input, and text area background and text color */
     .css-1d391kg, .css-1v0mbdj, .stTextInput > div > input, .stTextArea > div > textarea, .stSelectbox, .stCheckbox > div {
-        background-color: #262626;
+        background-color: #0e0e0e;
         color: #ffffff;
     }
     
