@@ -15,32 +15,48 @@ st.set_page_config(layout="wide")
 st.markdown(
     """
     <style>
+    /* Overall background and text color */
     .stApp {
         background-color: #0e0e0e;
         color: #ffffff;
     }
+    
+    /* Sidebar background color */
     .css-18e3th9 {
-        background-color: #0e0e0e;  /* Sidebar background color */
-    }
-    .css-1d391kg {
-        background-color: #0e0e0e;  /* Sidebar selectbox background color */
-    }
-    .css-1v0mbdj {
-        background-color: #262626;  /* Dropdown background color */
+        background-color: #0e0e0e;  
         color: #ffffff;
     }
+    
+    /* Sidebar selectbox background and text color */
+    .css-1d391kg {
+        background-color: #262626;  
+        color: #ffffff;
+    }
+    
+    /* Dropdown background and text color */
+    .css-1v0mbdj {
+        background-color: #262626;  
+        color: #ffffff;
+    }
+    
+    /* Input fields background and text color */
     .stTextInput, .stTextArea, .stSelectbox, .stCheckbox {
         background-color: #262626;
         color: #ffffff;
     }
+    
+    /* Button styles */
     .stButton > button {
         background-color: #1e1e1e;
         color: #ffffff;
     }
+    
+    /* Ensuring input text inside text areas is visible */
     .stTextInput > div > input {
         background-color: #262626;
         color: #ffffff;
     }
+    
     .stTextArea > div > textarea {
         background-color: #262626;
         color: #ffffff;
