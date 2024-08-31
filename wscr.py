@@ -117,10 +117,13 @@ st.text("SmartSuggest Prompt content and analyzing it using a Large Language Mod
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
+# Set default models
+default_model = list(SUPPORTED_MODELS.keys())[0]  # First model as default
+
 if "model_1" not in st.session_state:
-    st.session_state["model_1"] = ""
+    st.session_state["model_1"] = default_model
 if "model_2" not in st.session_state:
-    st.session_state["model_2"] = ""
+    st.session_state["model_2"] = default_model
 if "system_prompt" not in st.session_state:
     st.session_state["system_prompt"] = ""
 if "new_message" not in st.session_state:
@@ -149,15 +152,19 @@ with st.sidebar:
     model_option_1 = st.selectbox(
         "Select a 1st LLM model",
         list(SUPPORTED_MODELS.keys()),
-        key="model_1"
+        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_1"]),
+        key="model_1_select"
     )
+    st.session_state["model_1"] = model_option_1
     st.write('You selected 1st:', model_option_1)
 
     model_option_2 = st.selectbox(
         "Select a 2nd LLM model",
         list(SUPPORTED_MODELS.keys()),
-        key="model_2"
+        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_2"]),
+        key="model_2_select"
     )
+    st.session_state["model_2"] = model_option_2
     st.write('You selected 2nd:', model_option_2)
 
     prompt_option = st.radio("Select Prompt Option:", ("SmartSuggest Prompt", "Meta Prompt", "Advanced Prompt", "Custom Prompt"))
