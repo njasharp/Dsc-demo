@@ -6,3 +6,4 @@ httpx
 pandas
 PyPDF2
 Pillow
+groq
