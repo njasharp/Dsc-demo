@@ -38,6 +38,15 @@ client = Groq(
     api_key=os.environ.get("GROQ_API_KEY"),
 )
 
+# Define supported models
+SUPPORTED_MODELS = {
+    "Llama 3 70B": "llama3-70b-8192",
+    "Llama 3 8B": "llama3-8b-8192",
+    "Llama 3.1 70B": "llama-3.1-70b-versatile",
+    "Llama 3.1 8B": "llama-3.1-8b-instant",
+    "Mixtral 8x7B": "mixtral-8x7b-32768",
+}
+
 # Function to scrape the website
 def scrape_website(url):
     try:
@@ -139,13 +148,15 @@ with st.sidebar:
     # Select model
     model_option_1 = st.selectbox(
         "Select a 1st LLM model",
-        ('Model A - llama3-8b-8192', 'Model B - llama3-70b-8192')
+        list(SUPPORTED_MODELS.keys()),
+        key="model_1"
     )
     st.write('You selected 1st:', model_option_1)
 
     model_option_2 = st.selectbox(
         "Select a 2nd LLM model",
-        ('Model A - llama3-8b-8192', 'Model B - llama3-70b-8192')
+        list(SUPPORTED_MODELS.keys()),
+        key="model_2"
     )
     st.write('You selected 2nd:', model_option_2)
 
@@ -221,7 +232,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
         if st.session_state["show_steps"]:
             st.subheader("Improved Prompt")
         improvement_prompt = f"Improve the following prompt for better analysis and insights:\n\n{prompt}"
-        improved_prompt = query_groq(st.session_state["system_prompt"], None, improvement_prompt, model_option_1)
+        improved_prompt = query_groq(st.session_state["system_prompt"], None, improvement_prompt, SUPPORTED_MODELS[st.session_state["model_1"]])
 
         if st.session_state["show_steps"]:
             st.markdown(improved_prompt)
@@ -258,7 +269,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             try:
                 with sidebar_placeholder:
                     with st.spinner("Processing..."):
-                        response = query_groq(st.session_state["system_prompt"], None, augmented_prompt, model_option_1)
+                        response = query_groq(st.session_state["system_prompt"], None, augmented_prompt, SUPPORTED_MODELS[st.session_state["model_1"]])
                 st.markdown(response)
                 st.session_state["messages"].append({"role": "assistant", "content": response})
             except Exception as e:
@@ -274,7 +285,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             evaluation_prompt = f"Evaluate the following response and check if it is good enough:\n\n{response}"
             with sidebar_placeholder:
                 with st.spinner("Processing..."):
-                    evaluation_response = query_groq(st.session_state["system_prompt"], None, evaluation_prompt, model_option_2)
+                    evaluation_response = query_groq(st.session_state["system_prompt"], None, evaluation_prompt, SUPPORTED_MODELS[st.session_state["model_2"]])
             st.markdown(evaluation_response)
             st.session_state["messages"].append({"content": evaluation_response})
 
@@ -284,7 +295,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             feedback_prompt = f"Grade the quality of this response and provide feedback:\n\n{response}\n\nEvaluation: {evaluation_response}"
             with sidebar_placeholder:
                 with st.spinner("Processing..."):
-                    feedback_response = query_groq(st.session_state["system_prompt"], None, feedback_prompt, model_option_1)
+                    feedback_response = query_groq(st.session_state["system_prompt"], None, feedback_prompt, SUPPORTED_MODELS[st.session_state["model_1"]])
             st.markdown(feedback_response)
             st.session_state["messages"].append({"content": feedback_response})
 
@@ -298,7 +309,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
         try:
             with sidebar_placeholder:
                 with st.spinner("Processing..."):
-                    final_response = query_groq(st.session_state["system_prompt"], None, final_prompt_analysis, model_option_2)
+                    final_response = query_groq(st.session_state["system_prompt"], None, final_prompt_analysis, SUPPORTED_MODELS[st.session_state["model_2"]])
             st.markdown(final_response)
             st.session_state["messages"].append({"content": final_response})
         except Exception as e:
