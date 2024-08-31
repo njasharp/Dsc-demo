@@ -26,21 +26,9 @@ st.markdown(
         background-color: #0e0e0e;  
         color: #ffffff;
     }
-    
-    /* Sidebar selectbox background and text color */
-    .css-1d391kg {
-        background-color: #262626;  
-        color: #ffffff;
-    }
-    
-    /* Dropdown background and text color */
-    .css-1v0mbdj {
-        background-color: #262626;  
-        color: #ffffff;
-    }
-    
-    /* Input fields background and text color */
-    .stTextInput, .stTextArea, .stSelectbox, .stCheckbox {
+
+    /* Sidebar selectbox, checkbox, text input, and text area background and text color */
+    .css-1d391kg, .css-1v0mbdj, .stTextInput > div > input, .stTextArea > div > textarea, .stSelectbox, .stCheckbox > div {
         background-color: #262626;
         color: #ffffff;
     }
@@ -50,22 +38,15 @@ st.markdown(
         background-color: #1e1e1e;
         color: #ffffff;
     }
-    
-    /* Ensuring input text inside text areas is visible */
-    .stTextInput > div > input {
-        background-color: #262626;
-        color: #ffffff;
-    }
-    
-    .stTextArea > div > textarea {
-        background-color: #262626;
+
+    /* Adjust text visibility for all input elements in sidebar */
+    .stTextInput > div > input, .stTextArea > div > textarea, .css-1v0mbdj {
         color: #ffffff;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 
 # Function to fetch available models from Groq
 def fetch_groq_models():
