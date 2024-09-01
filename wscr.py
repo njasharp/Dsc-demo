@@ -12,7 +12,26 @@ import os
 # Streamlit page configuration
 st.set_page_config(layout="wide")
 
-
+# Apply custom CSS for a dark theme
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #000000;
+        color: #ffffff;
+    }
+    .stTextInput, .stTextArea, .stSelectbox {
+        background-color: #000000;
+        color: #ffffff;
+    }
+    .stButton > button {
+        background-color: #000000;
+        color: #ffffff;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Initialize the Groq client with the API key from environment variable
 client = Groq(
