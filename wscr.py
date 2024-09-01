@@ -350,4 +350,4 @@ if prompt := st.text_input("What is your query?", key="user_query"):
     st.session_state["new_message"] = True
     st.rerun()
 
-st.sidebar.info("Built by DW 8-30-24"))
+st.sidebar.info("Built by DW 9-1-24")
