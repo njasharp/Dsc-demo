@@ -12,7 +12,26 @@ import os
 # Streamlit page configuration
 st.set_page_config(layout="wide")
 
-
+# Apply custom CSS for a dark theme
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #0e0e0e;
+        color: #ffffff;
+    }
+    .stTextInput, .stTextArea, .stSelectbox {
+        background-color: #262626;
+        color: #ffffff;
+    }
+    .stButton > button {
+        background-color: #1e1e1e;
+        color: #ffffff;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Initialize the Groq client with the API key from environment variable
 client = Groq(
@@ -137,6 +156,22 @@ st.sidebar.write("SmartSuggest Settings")
 
 # Sidebar menu
 with st.sidebar:
+    # Select model_1 for the first step
+    st.session_state["model_1"] = st.selectbox(
+        "Select LLM model for the First Step (Model 1)",
+        list(SUPPORTED_MODELS.keys()),
+        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_1"]),
+        key="model_1_select"
+    )
+
+    # Select model_2 for the final step feedback
+    st.session_state["model_2"] = st.selectbox(
+        "Select LLM model for Final Step Feedback (Model 2)",
+        list(SUPPORTED_MODELS.keys()),
+        index=list(SUPPORTED_MODELS.keys()).index(st.session_state["model_2"]),
+        key="model_2_select"
+    )
+
     # Select models for each step
     st.session_state["model_improvement"] = st.selectbox(
         "Select LLM model for Improvement",
