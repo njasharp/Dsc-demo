@@ -18,15 +18,15 @@ st.markdown(
     <style>
     .stApp {
         background-color: #000000;
-        color: #ffffff;
+        color: #000000;
     }
     .stTextInput, .stTextArea, .stSelectbox {
         background-color: #000000;
-        color: #ffffff;
+        color: #000000;
     }
     .stButton > button {
         background-color: #000000;
-        color: #ffffff;
+        color: #000000;
     }
     </style>
     """,
