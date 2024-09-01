@@ -12,7 +12,26 @@ import os
 # Streamlit page configuration
 st.set_page_config(layout="wide")
 
-
+# Apply custom CSS for a dark theme
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #0e0e0e;
+        color: #ffffff;
+    }
+    .stTextInput, .stTextArea, .stSelectbox {
+        background-color: #262626;
+        color: #ffffff;
+    }
+    .stButton > button {
+        background-color: #1e1e1e;
+        color: #ffffff;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Initialize the Groq client with the API key from environment variable
 client = Groq(
@@ -194,6 +213,7 @@ with st.sidebar:
         st.session_state["scraped_content"] = ""
         st.session_state["uploaded_image"] = None
         st.session_state["uploaded_file_content"] = ""
+        st.sidebar.info("Screen reset. All progress has been cleared.")
         st.rerun()
 
     url = st.text_input("Enter the website URL to scrape")
@@ -262,13 +282,13 @@ if prompt := st.text_input("What is your query?", key="user_query"):
         st.markdown(final_prompt)
 
     with st.chat_message("assistant"):
-        # Step 1: Generate initial response
+        # Step 1: Generate initial response using model_1
         if st.session_state["show_steps"]:
             st.subheader("Generating the Initial Response")
             try:
                 with sidebar_placeholder:
                     with st.spinner("Processing..."):
-                        response = query_groq(st.session_state["system_prompt"], None, augmented_prompt, SUPPORTED_MODELS[st.session_state["model_improvement"]])
+                        response = query_groq(st.session_state["system_prompt"], None, augmented_prompt, SUPPORTED_MODELS[st.session_state["model_1"]])
                 st.markdown(response)
                 st.session_state["messages"].append({"role": "assistant", "content": response})
             except Exception as e:
@@ -278,17 +298,17 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             if st.session_state["show_steps"]:
                 st.session_state["messages"].append({"content": response})
 
-        # Step 2: Evaluate the response
+        # Step 2: Evaluate the response using model_2
         if st.session_state["show_steps"]:
             st.subheader("Evaluating the Response")
             evaluation_prompt = f"Evaluate the following response and check if it is good enough:\n\n{response}"
             with sidebar_placeholder:
                 with st.spinner("Processing..."):
-                    evaluation_response = query_groq(st.session_state["system_prompt"], None, evaluation_prompt, SUPPORTED_MODELS[st.session_state["model_evaluation"]])
+                    evaluation_response = query_groq(st.session_state["system_prompt"], None, evaluation_prompt, SUPPORTED_MODELS[st.session_state["model_2"]])
             st.markdown(evaluation_response)
             st.session_state["messages"].append({"content": evaluation_response})
 
-        # Step 3: Grade and provide feedback
+        # Step 3: Grade and provide feedback using model_final
         if st.session_state["show_steps"]:
             st.subheader("Grading the Response and Providing Feedback")
             feedback_prompt = f"Grade the quality of this response and provide feedback:\n\n{response}\n\nEvaluation: {evaluation_response}"
@@ -298,7 +318,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             st.markdown(feedback_response)
             st.session_state["messages"].append({"content": feedback_response})
 
-        # Final Step: Apply final prompt to the LLM including any additional content
+        # Final Step: Apply final prompt to the LLM including any additional content using model_final
         final_prompt_analysis = f"Final analysis and query based on the improved and evaluated response:\n\n{final_prompt}\n\n"
         final_prompt_analysis += st.session_state["scraped_content"] + "\n\n" + st.session_state["uploaded_file_content"]
         if st.session_state["uploaded_image"]:
@@ -311,6 +331,13 @@ if prompt := st.text_input("What is your query?", key="user_query"):
                     final_response = query_groq(st.session_state["system_prompt"], None, final_prompt_analysis, SUPPORTED_MODELS[st.session_state["model_final"]])
             st.markdown(final_response)
             st.session_state["messages"].append({"content": final_response})
+
+            # Generate audio from the final response and make it playable
+            tts = gTTS(text=final_response, lang='en')
+            audio_path = "response.mp3"
+            tts.save(audio_path)
+            st.audio(audio_path)
+
         except Exception as e:
             st.error(f"Failed to generate final response: {e}")
             final_response = ""
@@ -319,13 +346,8 @@ if prompt := st.text_input("What is your query?", key="user_query"):
             st.write("**Final Query and Analysis:**")
             st.markdown(final_response)
 
-        # Generate audio from the final response
-        tts = gTTS(text=final_response, lang='en')
-        tts.save("response.mp3")
-        st.audio("response.mp3")
-
     # Set flag for new message
     st.session_state["new_message"] = True
     st.rerun()
 
-st.sidebar.info("Built by DW 8-30-24")
+st.sidebar.info("Built by DW 8-30-24"))
