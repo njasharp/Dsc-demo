@@ -17,7 +17,7 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-color: #0e0e0e;
+        background-color: #000000;
         color: #ffffff;
     }
     .stTextInput, .stTextArea, .stSelectbox {
