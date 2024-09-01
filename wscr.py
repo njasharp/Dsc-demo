@@ -21,7 +21,7 @@ st.markdown(
         color: #ffffff;
     }
     .stTextInput, .stTextArea, .stSelectbox {
-        background-color: #262626;
+        background-color: #000000;
         color: #ffffff;
     }
     .stButton > button {
