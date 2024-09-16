@@ -34,28 +34,23 @@ st.markdown(
 )
 
 # Initialize the Groq client with the API key from environment variable
-client = Groq(
-    api_key=os.environ.get("GROQ_API_KEY"),
-)
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Define supported models
 SUPPORTED_MODELS = {
-    "Llama 3 70B": "llama3-70b-8192",
     "Llama 3 8B": "llama3-8b-8192",
     "Llama 3.1 70B": "llama-3.1-70b-versatile",
     "Llama 3.1 8B": "llama-3.1-8b-instant",
     "Mixtral 8x7B": "mixtral-8x7b-32768",
-    "Gemma 2 9B": "gemma2-9b-it"
+    "Gemma 2 9B": "gemma2-9b-it",
+    "LLaVA 1.5 7B": "llava-v1.5-7b-4096-preview"  # New model added
 }
 
 # Retry mechanism for Groq API with temperature parameter
 def query_groq_with_retry(messages, model, temperature=None, retries=3):
     for attempt in range(retries):
         try:
-            kwargs = {
-                "messages": messages,
-                "model": model,
-            }
+            kwargs = {"messages": messages, "model": model}
             if temperature is not None:
                 kwargs["temperature"] = temperature
             chat_completion = client.chat.completions.create(**kwargs)
@@ -72,11 +67,9 @@ def scrape_website(url):
     try:
         if not url.startswith(('http://', 'https://')):
             url = 'https://' + url
-
         response = requests.get(url)
         response.raise_for_status()  # Raise an error for bad responses
         soup = BeautifulSoup(response.text, "html.parser")
-
         # Extract the body content and clean it
         body_content = soup.body.get_text(separator="\n", strip=True)
         return body_content
@@ -134,8 +127,6 @@ if "system_prompt" not in st.session_state:
     st.session_state["system_prompt"] = ""
 if "new_message" not in st.session_state:
     st.session_state["new_message"] = False
-if "user_query" not in st.session_state:
-    st.session_state["user_query"] = ""
 if "scraped_content" not in st.session_state:
     st.session_state["scraped_content"] = ""
 if "uploaded_image" not in st.session_state:
@@ -273,12 +264,15 @@ for message in st.session_state["messages"]:
 # Add space before the query box
 st.write("")
 
-if st.session_state["new_message"]:
-    st.session_state["user_query"] = ""
+# Handle the query input safely without modifying st.session_state["user_query"] directly
+if st.session_state.get("new_message", False):
     st.session_state["new_message"] = False
     st.rerun()
 
-if prompt := st.text_input("What is your query?", key="user_query"):
+# Use st.text_input but do not modify user_query directly afterward
+prompt = st.text_input("What is your query?", key="user_query")
+
+if prompt:
     original_prompt = prompt
     if prompt_option == "SmartSuggest Prompt":
         if st.session_state["show_steps"]:
@@ -358,12 +352,7 @@ if prompt := st.text_input("What is your query?", key="user_query"):
 
 # Sidebar reset functionality
 if st.sidebar.button("Reset"):
-    st.session_state["messages"] = []
-    st.session_state["new_message"] = False
-    st.session_state["user_query"] = ""
-    st.session_state["scraped_content"] = ""
-    st.session_state["uploaded_image"] = None
-    st.session_state["uploaded_file_content"] = ""
+    st.session_state.clear()
     st.sidebar.info("Screen reset. All progress has been cleared.")
     st.rerun()
 
