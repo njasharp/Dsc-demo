@@ -48,14 +48,17 @@ SUPPORTED_MODELS = {
     "Gemma 2 9B": "gemma2-9b-it"
 }
 
-# Retry mechanism for Groq API
-def query_groq_with_retry(messages, model, retries=3):
+# Retry mechanism for Groq API with temperature parameter
+def query_groq_with_retry(messages, model, temperature=None, retries=3):
     for attempt in range(retries):
         try:
-            chat_completion = client.chat.completions.create(
-                messages=messages,
-                model=model,
-            )
+            kwargs = {
+                "messages": messages,
+                "model": model,
+            }
+            if temperature is not None:
+                kwargs["temperature"] = temperature
+            chat_completion = client.chat.completions.create(**kwargs)
             return chat_completion.choices[0].message.content
         except Exception as e:
             if attempt < retries - 1:
@@ -63,11 +66,6 @@ def query_groq_with_retry(messages, model, retries=3):
             else:
                 st.error(f"An error occurred after {retries} attempts: {e}")
                 return None
-
-# Function to stream responses from Groq
-def groq_stream_responses(messages):
-    for i in range(5):  # Simulate streaming (replace with actual API call when possible)
-        yield f"Generated response part {i + 1}"
 
 # Function to scrape the website
 def scrape_website(url):
@@ -89,13 +87,15 @@ def scrape_website(url):
 # CoT (Chain of Thought) prompt generator
 def cot_prompt_generator(prompt):
     cot_template = f"""
-    1. Understand the Problem: Carefully read and understand the user's question or request.
-    2. Break Down the Reasoning Process: Outline the steps required to solve the problem or respond to the request logically and sequentially. Think aloud and describe each step in detail.
-    3. Explain Each Step: Provide reasoning or calculations for each step, explaining how you arrive at each part of your answer.
-    4. Arrive at the Final Answer: Only after completing all steps, provide the final answer or solution.
-    5. Review the Thought Process: Double-check the reasoning for errors or gaps before finalizing your response.
-    The user request is: {prompt}
-    """
+Understand the Problem: Carefully read and understand the user's question or request.
+Break Down the Reasoning Process: Outline the steps required to solve the problem or respond to the request logically and sequentially. Think aloud and describe each step in detail.
+Explain Each Step: Provide reasoning or calculations for each step, explaining how you arrive at each part of your answer.
+Arrive at the Final Answer: Only after completing all steps, provide the final answer or solution.
+Review the Thought Process: Double-check the reasoning for errors or gaps before finalizing your response.
+Always aim to make your thought process transparent and logical, helping users understand how you reached your conclusion.
+
+User's request: {prompt}
+"""
     return cot_template
 
 # Function to read the uploaded file content
@@ -146,6 +146,8 @@ if "show_steps" not in st.session_state:
     st.session_state["show_steps"] = True
 if "use_both_prompts" not in st.session_state:
     st.session_state["use_both_prompts"] = False
+if "temperature" not in st.session_state:
+    st.session_state["temperature"] = 0.7  # Default temperature
 
 # Sidebar spinner placeholder
 sidebar_placeholder = st.sidebar.empty()
@@ -168,23 +170,33 @@ with st.sidebar:
         key="model_2_select"
     )
 
-    # **Added "CoT Prompt" to the prompt options**
+    # Add temperature slider
+    st.session_state["temperature"] = st.slider(
+        "Set Model Temperature",
+        min_value=0.0,
+        max_value=1.0,
+        value=st.session_state["temperature"],
+        step=0.1,
+        key="temperature_slider"
+    )
+
+    # Add prompt options
     prompt_option = st.radio("Select Prompt Option:", (
-        "SmartSuggest Prompt", 
-        "Meta Prompt", 
-        "Advanced Prompt", 
+        "SmartSuggest Prompt",
+        "Meta Prompt",
+        "Advanced Prompt",
         "Reflection Prompt",
-        "CoT Prompt",  # New Option Added
+        "CoT Prompt",
         "Custom Prompt"
     ))
 
     # Option to use both original and improved prompts
     st.session_state["use_both_prompts"] = st.checkbox(
-        "Use both original and improved prompts for final output", 
+        "Use both original and improved prompts for final output",
         value=False
     )
 
-    # **Define the CoT Prompt**
+    # Define the prompts
     if prompt_option == "SmartSuggest Prompt":
         default_prompt = "Provide your prompt for improvement."
     elif prompt_option == "Meta Prompt":
@@ -197,24 +209,45 @@ with st.sidebar:
             "Constraints: Keep the analysis focused on actionable insights that can inform business decisions. Use clear, non-technical language suitable for a general audience.\n"
             "Additional Guidance: If the content includes multiple topics, prioritize those most relevant to [specific goal or industry]. Provide the summary in bullet points, and if applicable, suggest potential applications of the findings."
         )
+    elif prompt_option == "Reflection Prompt":
+        default_prompt = (
+            "1. Begin with a <thinking> section.\n"
+            "2. Inside the thinking section:\n"
+            "   a. Briefly analyze the question and outline your approach.\n"
+            "   b. Present a clear plan of steps to solve the problem.\n"
+            "   c. Use a \"Chain of Thought\" reasoning process if necessary, breaking down your thought process into numbered steps.\n"
+            "   d. If the question is simple or factual, limit the steps and keep the answer concise. If the question is more complex or involves multi-step reasoning, fully utilize the <thinking> and <reflection> process.\n"
+            "   e. Consider \"Alternative Solutions\" where applicable, presenting multiple possible approaches, and briefly evaluating them.\n"
+            "   f. Optionally prompt the user for any additional clarifications or preferences before proceeding.\n"
+            "3. Include a <reflection> section for each idea where you:\n"
+            "   a. Review your reasoning.\n"
+            "   b. Check for potential errors, optimizations, or enhancements.\n"
+            "   c. If applicable, consider alternative approaches and explain why the current solution was chosen.\n"
+            "   d. Confirm or adjust your conclusion if necessary.\n"
+            "4. Be sure to close all reflection sections.\n"
+            "5. Close the thinking section with </thinking>.\n"
+            "6. Provide your final answer in an <output> section.\n"
+            "7. Where relevant, use examples or analogies to clarify complex steps.\n"
+            "8. Adjust your tone based on the nature of the user’s question or audience, using a more casual tone where appropriate."
+        )
     elif prompt_option == "CoT Prompt":
         default_prompt = cot_prompt_generator("Enter your problem or request here.")
     else:
         default_prompt = "Enter your custom prompt here."
 
     st.session_state["system_prompt"] = st.text_area(
-        "System Prompt", 
-        value=default_prompt, 
+        "System Prompt",
+        value=default_prompt,
         height=200
     )
 
     st.session_state["uploaded_image"] = st.file_uploader(
-        "Upload an image (optional):", 
+        "Upload an image (optional):",
         type=["png", "jpg", "jpeg"]
     )
 
     st.session_state["show_steps"] = st.checkbox(
-        "Show steps and results for each phase", 
+        "Show steps and results for each phase",
         value=True
     )
 
@@ -225,7 +258,7 @@ with st.sidebar:
         st.text_area("Scraped Content", st.session_state["scraped_content"], height=300)
 
     uploaded_file = st.file_uploader(
-        "Upload a PDF, CSV, or TXT file (optional):", 
+        "Upload a PDF, CSV, or TXT file (optional):",
         type=["pdf", "csv", "txt"]
     )
     if uploaded_file is not None:
@@ -251,7 +284,11 @@ if prompt := st.text_input("What is your query?", key="user_query"):
         if st.session_state["show_steps"]:
             st.subheader("Improved Prompt")
         improvement_prompt = f"Improve the following prompt for better analysis and insights:\n\n{prompt}"
-        improved_prompt = query_groq_with_retry([{"role": "user", "content": improvement_prompt}], SUPPORTED_MODELS[st.session_state["model_1"]])
+        improved_prompt = query_groq_with_retry(
+            [{"role": "user", "content": improvement_prompt}],
+            SUPPORTED_MODELS[st.session_state["model_1"]],
+            temperature=st.session_state["temperature"]
+        )
 
         if st.session_state["show_steps"]:
             st.markdown(improved_prompt)
@@ -281,7 +318,11 @@ if prompt := st.text_input("What is your query?", key="user_query"):
         if st.session_state["show_steps"]:
             st.subheader("Generating the Initial Response")
             try:
-                response = query_groq_with_retry([{"role": "user", "content": augmented_prompt}], SUPPORTED_MODELS[st.session_state["model_1"]])
+                response = query_groq_with_retry(
+                    [{"role": "user", "content": augmented_prompt}],
+                    SUPPORTED_MODELS[st.session_state["model_1"]],
+                    temperature=st.session_state["temperature"]
+                )
                 st.markdown(response)
                 st.session_state["messages"].append({"role": "assistant", "content": response})
             except Exception as e:
@@ -296,7 +337,11 @@ if prompt := st.text_input("What is your query?", key="user_query"):
                 final_prompt_analysis += f"\n\n[Attached Image: {st.session_state['uploaded_image'].name}]"
 
             try:
-                final_response = query_groq_with_retry([{"role": "user", "content": final_prompt_analysis}], SUPPORTED_MODELS[st.session_state["model_2"]])
+                final_response = query_groq_with_retry(
+                    [{"role": "user", "content": final_prompt_analysis}],
+                    SUPPORTED_MODELS[st.session_state["model_2"]],
+                    temperature=st.session_state["temperature"]
+                )
                 st.markdown(final_response)
                 st.session_state["messages"].append({"content": final_response})
             except Exception as e:
