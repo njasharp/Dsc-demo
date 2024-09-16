@@ -139,6 +139,8 @@ if "use_both_prompts" not in st.session_state:
     st.session_state["use_both_prompts"] = False
 if "temperature" not in st.session_state:
     st.session_state["temperature"] = 0.7  # Default temperature
+if "play_audio" not in st.session_state:
+    st.session_state["play_audio"] = False  # Default value for playing audio
 
 # Sidebar spinner placeholder
 sidebar_placeholder = st.sidebar.empty()
@@ -184,6 +186,12 @@ with st.sidebar:
     # Option to use both original and improved prompts
     st.session_state["use_both_prompts"] = st.checkbox(
         "Use both original and improved prompts for final output",
+        value=False
+    )
+
+    # Option to play audio after completion
+    st.session_state["play_audio"] = st.checkbox(
+        "Play audio when query is complete",
         value=False
     )
 
@@ -338,14 +346,16 @@ if prompt:
                 )
                 st.markdown(final_response)
                 st.session_state["messages"].append({"content": final_response})
+
+                # Generate audio from the final response and make it playable
+                if st.session_state["play_audio"]:
+                    tts = gTTS(text=final_response, lang='en')
+                    audio_path = "response.mp3"
+                    tts.save(audio_path)
+                    st.audio(audio_path)
+
             except Exception as e:
                 st.error(f"Failed to generate final response: {e}")
-
-            # Generate audio from the final response and make it playable
-            tts = gTTS(text=final_response, lang='en')
-            audio_path = "response.mp3"
-            tts.save(audio_path)
-            st.audio(audio_path)
 
         st.session_state["new_message"] = True
         st.rerun()
@@ -357,4 +367,4 @@ if st.sidebar.button("Reset"):
     st.rerun()
 
 # Display footer or final message
-st.sidebar.info("Built by DW 9-16-24")
+st.sidebar.info("Built by DW 9-16-24 refresh page to clear query")
